@@ -1075,6 +1075,7 @@ html:root .xdel .ic{width:14px;height:14px}
 html:root .layoutbtn .ic{width:24px;height:24px}
 html:root .chipt.ic .ic{width:16px;height:16px}
 html:root .cmnav .ic{width:18px;height:18px}
+html:root .capmore{margin-top:10px}
 </style>
 
 <div class="app" id="app">
@@ -2333,6 +2334,7 @@ function psetBody(k){
   if(k==="backup") return `<div class="muted fs13">Все профили, свои продукты, списки «Не ем» и дневник в одном файле. Пригодится, чтобы ничего не потерять или перенести на другую версию.</div>
     <div class="row"><button class="btn ghost" data-act="export">Скачать копию</button><label class="btn ghost" for="imp-file" style="text-align:center;cursor:pointer">Загрузить из файла</label></div>
     <button class="btn ghost wide" data-act="exportcsv">📄 Дневник таблицей (CSV)</button>
+    <div class="muted fs12">Товары из магазина со штрихкодами — из открытой базы Open Food Facts (openfoodfacts.org, лицензия ODbL).</div>
     <div class="muted fs12">Копия — один файл со всеми профилями, всеми днями, данными семьи и фото. Его прочитает и будущее приложение. CSV открывается в Excel и Google Таблицах.</div>
     <input type="file" id="imp-file" accept=".json,application/json" class="vh"><div id="dataMsg" class="muted fs13"></div>`;
   if(k==="norm") return `<div class="result" id="result"></div>`;
@@ -2492,7 +2494,7 @@ function renderProdGrid(){
   const g=$("#pgrid"); if(!g) return;
   document.querySelectorAll("[data-pf]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.pf===prodFilter));
   const grid=l=>`<div class="pgrid">${l.map(prodCard).join("")}</div>`, empty=t=>`<div class="empty">${t}</div>`;
-  if(prodQuery){const l=allProducts().filter(p=>matches(p,prodQuery));g.innerHTML=l.length?grid(l):empty("Ничего не найдено. Добавьте продукт сами — кнопка «＋» справа от поиска.")}
+  if(prodQuery){const l=rankQ(allProducts().filter(p=>matches(p,prodQuery)),prodQuery);g.innerHTML=l.length?capGrid("pg:"+prodQuery,l,prodCard):empty("Ничего не найдено. Добавьте продукт сами — кнопка «＋» справа от поиска.")}
   else if(prodFilter==="love"){const l=lovedList();g.innerHTML=l.length?grid(l):empty("Любимого пока нет. Отметьте ❤️ в карточке продукта или в профиле → «Любимое».")}
   else if(prodFilter==="mine"){const l=S.custom.filter(p=>p.cat!=="mydish");g.innerHTML=l.length?grid(l):empty("Своих продуктов пока нет. «＋» → «Свой продукт».")}
   else if(prodFilter==="dish"){const l=S.custom.filter(p=>p.cat==="mydish");g.innerHTML=l.length?grid(l):empty("Своих блюд пока нет. «＋» → «Блюдо по рецепту».")}
@@ -2524,7 +2526,7 @@ function renderGwin(){
   } else {
     const list0=gwin.sub&&gwin.sub!=="*"?pool.filter(p=>subOf(p)===gwin.sub):pool, list=SEL?list0:sortProds(ckFilter(list0));
     body=exTop+(subs.length?`<div class="subchips">${[["*","Все"],...subs.map(x=>[x.k,x.em+" "+x.n])].map(([k,n])=>`<button type="button" data-gsub="${k}" aria-pressed="${(gwin.sub||"*")===k}">${esc(n)}</button>`).join("")}</div>`:"")+(SEL?"":ckChips(list0)+sortChips(list0))
-      +(LV?`<div class="quick exquick lvquick">${list.map(p=>`<button type="button" data-love="${p.id}" aria-pressed="${allHid||ex.items.includes(p.id)}"${allHid?" disabled":""}>${esc(p.emoji)} ${esc(p.name)}</button>`).join("")}</div>`:EX?`<div class="quick exquick">${list.map(p=>`<button type="button" data-hide="${p.id}" aria-pressed="${allHid||ex.items.includes(p.id)}"${allHid?" disabled":""}>${esc(p.emoji)} ${esc(p.name)}</button>`).join("")}</div>`:list.length?`<div class="pgrid">${list.map(prodCard).join("")}</div>`:`<div class="empty">${pool.length?"В этой подгруппе пусто.":"В этой группе всё скрыто или удалено."}</div>`);
+      +(LV?`<div class="quick exquick lvquick">${capList("gw:lv"+gwin.cat+"|"+(gwin.sub||""),list).map(p=>`<button type="button" data-love="${p.id}" aria-pressed="${allHid||ex.items.includes(p.id)}"${allHid?" disabled":""}>${esc(p.emoji)} ${esc(p.name)}</button>`).join("")}</div>${capMore("gw:lv"+gwin.cat+"|"+(gwin.sub||""),list)}`:EX?`<div class="quick exquick">${capList("gw:ex"+gwin.cat+"|"+(gwin.sub||""),list).map(p=>`<button type="button" data-hide="${p.id}" aria-pressed="${allHid||ex.items.includes(p.id)}"${allHid?" disabled":""}>${esc(p.emoji)} ${esc(p.name)}</button>`).join("")}</div>${capMore("gw:ex"+gwin.cat+"|"+(gwin.sub||""),list)}`:list.length?capGrid("gw:"+gwin.cat+"|"+(gwin.sub||""),list,prodCard):`<div class="empty">${pool.length?"В этой подгруппе пусто.":"В этой группе всё скрыто или удалено."}</div>`);
   }
   const head=`${gwin.sub&&subs.length?`<button class="iconbtn" data-act="gback" aria-label="К подгруппам"><svg class='ic' viewBox='0 0 24 24' aria-hidden='true'><path d='M15 5l-7 7 7 7'/></svg></button>`:""}${cemo(c[2],gwin.cat)}<h3>${esc(c[1])}<small>${sub?esc(sub.n)+" · ":""}${plural(gwin.sub&&gwin.sub!=="*"?(sub?sub.c:pool.length):pool.length,"продукт","продукта","продуктов")}</small></h3><button class="iconbtn" data-act="gclose" aria-label="Закрыть"><svg class='ic' viewBox='0 0 24 24' aria-hidden='true'><path d='M6 6l12 12M18 6L6 18'/></svg></button>`;
   const key=gwin.cat+"|"+(gwin.sub||"");
@@ -2580,7 +2582,7 @@ function pinfoBody(){
   const ex=excl(), hidMe=ex.items.includes(p.id), hidCat=ex.cats.includes(p.cat), ph=photoOf(p.id), fs=funShare(prof());
   const st=(v,n,c)=>`<div><b class="num${c?" "+c:""}">${v}</b><small>${n}</small></div>`;
   const A=(attr,em,t,cls)=>`<button type="button" class="pia${cls?" "+cls:""}" ${attr}><span aria-hidden="true">${em}</span>${t}</button>`;
-  return `<div class="pihd"><span class="pemo big">${pic(p)}</span><h3>${esc(p.name)}</h3><div class="pibadges">${cookBadge(p)}${p.custom?'<span class="ck" style="--ck:#3E9A5C">⭐ мой</span>':""}${fs&&isFun(p)?'<span class="ck" style="--ck:#8E6BD8">🍫 для души</span>':""}</div><small class="muted">${catName(p.cat||"other")} · на 100 ${unitOf(p)}${p.pc?` · 1 шт ≈ ${fmt(p.pc)} ${unitOf(p)}`:""}${p.src==="l"?" · ✔ по этикетке":""}</small></div>
+  return `<div class="pihd"><span class="pemo big">${pic(p)}</span><h3>${esc(p.name)}</h3><div class="pibadges">${cookBadge(p)}${p.custom?'<span class="ck" style="--ck:#3E9A5C">⭐ мой</span>':""}${fs&&isFun(p)?'<span class="ck" style="--ck:#8E6BD8">🍫 для души</span>':""}</div><small class="muted">${catName(p.cat||"other")} · на 100 ${unitOf(p)}${p.pc?` · 1 шт ≈ ${fmt(p.pc)} ${unitOf(p)}`:""}${p.src==="l"?" · ✔ по этикетке":p.src==="off"?" · 🌐 Open Food Facts":""}</small></div>
   <div class="pistats">${st(fmt(p.k),"ккал")}${st(f1(p.p),"белки","p")}${st(f1(p.f),"жиры","f")}${st(f1(p.c),"углев.","u")}</div>
   ${safeHTML(()=>canEatHTML(p))}<button type="button" class="btn wide" data-act="piadd">＋ Добавить в дневник</button>
   <div class="piacts">
@@ -4166,10 +4168,10 @@ function renderPickList(){
   const vis=visibleProducts();
   let h="";
   if(q){
-    const list=vis.filter(p=>matches(p,q));
+    const list=rankQ(vis.filter(p=>matches(p,q)),q);
     const hidN=allProducts().filter(p=>isHidden(p)&&matches(p,q)).length;
     h+=`<div class="lab">Найдено: ${list.length}</div>`;
-    h+=list.length?`<div class="pgrid">${list.map(pickCard).join("")}</div>`:`<div class="empty">Такого продукта нет в базе.</div>`;
+    h+=list.length?capGrid("pk:"+q,list,pickCard):`<div class="empty">Такого продукта нет в базе.</div>`;
     h+=`<button class="btn ghost wide" data-act="newfromsearch">＋ Добавить «${esc(q)}» как свой продукт</button>`;
     if(hidN) h+=`<div class="muted" style="font-size:13px;text-align:center">Ещё ${hidN} в списке «Не ем» этого профиля</div>`;
   } else if(sheet.cat){
@@ -4181,7 +4183,7 @@ function renderPickList(){
     } else {
       const list0=sheet.sub&&sheet.sub!=="*"?inCat.filter(p=>subOf(p)===sheet.sub):inCat, list=sortProds(ckFilter(list0));
       const sb=subs.find(x=>x.k===sheet.sub);
-      h+=(subs.length?`<div class="grouphead"><button class="backbtn" data-act="psubback">‹ ${esc((CATS.find(c=>c[0]===sheet.cat)||["","Группа"])[1])}: подгруппы</button><h3>${sb?sb.em+" "+esc(sb.n):"Все"}</h3></div><div class="subchips">${[["*","Все"],...subs.map(x=>[x.k,x.em+" "+x.n])].map(([k,n])=>`<button type="button" data-psub="${k}" aria-pressed="${sheet.sub===k}">${esc(n)}</button>`).join("")}</div>`:groupHead(sheet.cat,"pick"))+ckChips(list0)+sortChips(list0)+(list.length?`<div class="pgrid">${list.map(pickCard).join("")}</div>`:`<div class="empty">Здесь таких нет.</div>`);
+      h+=(subs.length?`<div class="grouphead"><button class="backbtn" data-act="psubback">‹ ${esc((CATS.find(c=>c[0]===sheet.cat)||["","Группа"])[1])}: подгруппы</button><h3>${sb?sb.em+" "+esc(sb.n):"Все"}</h3></div><div class="subchips">${[["*","Все"],...subs.map(x=>[x.k,x.em+" "+x.n])].map(([k,n])=>`<button type="button" data-psub="${k}" aria-pressed="${sheet.sub===k}">${esc(n)}</button>`).join("")}</div>`:groupHead(sheet.cat,"pick"))+ckChips(list0)+sortChips(list0)+(list.length?capGrid("pk:"+sheet.cat+"|"+(sheet.sub||""),list,pickCard):`<div class="empty">Здесь таких нет.</div>`);
     }
   } else {
     h+=quickHTML();
@@ -4431,6 +4433,7 @@ const DATA_BTN=[
   [["wsact"],(t,d,e)=>{{if(!sheet||!sheet.res)return;wsRead();const a=sheet.res.acts[+d.wsact];if(a)a.on=!a.on;renderSheet();return}}],
   [["density"],(t,d,e)=>{{try{localStorage.setItem(LS+"ui:density",d.density)}catch(_){}applyTheme();document.querySelectorAll("[data-density]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.density===d.density));return}}],
   [["anim"],(t,d,e)=>{{uiSet("noanim",d.anim==="off");applyAnim();document.querySelectorAll("[data-anim]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.anim===d.anim));return}}],
+  [["more"],(t,d,e)=>{{const k=d.more;CAP[k]=capN(k)+200;if(k.startsWith("pk:"))renderPickList();else if(k.startsWith("gw:"))renderGwin();else renderProdGrid();return}}],
   [["calday"],(t,d,e)=>{{if(sheet&&sheet.mode==="cal"){sheet=null;$("#sheetRoot").innerHTML=""}const was=day;day=d.calday;calMode="week";calMonth=null;loadDay();if(day!==was)daySlide(day>was?1:-1);return}}],
   [["calmode"],(t,d,e)=>{{calMode=d.calmode;calMonth=day.slice(0,7);render();return}}],
   [["spread"],(t,d,e)=>{{openSheet({mode:"spread",meal:"l",pid:d.spread,days:[],meals:["l"],g:""});return}}],
@@ -5066,7 +5069,7 @@ async function decodeBarcode(file){
 async function bcLookup(code){
   const rm=new Set(S.removed||[]);
   const pid=(S.barcodes||{})[code]; if(pid){const p=findProduct(pid);if(p&&!rm.has(p.id))return {p}}
-  const own=allProducts().find(p=>p.bc===code); if(own) return {p:own};
+  const own=allProducts().find(p=>p.bc&&(","+p.bc+",").includes(","+code+",")); if(own) return {p:own};
   try{
     const ctl=new AbortController(), tm=setTimeout(()=>ctl.abort(),7000);
     const r=await fetch("https://world.openfoodfacts.org/api/v2/product/"+code+".json?fields=product_name,product_name_ru,brands,nutriments",{signal:ctl.signal}); clearTimeout(tm);
@@ -5148,6 +5151,26 @@ function bcSave(){
   if(s.prod){sheet=null;$("#sheetRoot").innerHTML="";prodQuery="";gwin={cat:p.cat,sub:null};render();toast("«"+name+"» сохранён со штрихкодом");return}
   openSheet({mode:"grams",meal:s.meal,product:p,g:p.pc||100}); toast("«"+name+"» сохранён со штрихкодом");
 }
+/* ---------- Длинные списки: показываем частями ---------- */
+const CAP={};
+const capN=k=>CAP[k]||120;
+const capList=(k,list)=>list.slice(0,capN(k));
+const capMore=(k,list)=>list.length>capN(k)?`<button type="button" class="btn ghost wide capmore" data-more="${esc(k)}">Показать ещё ${Math.min(200,list.length-capN(k))} · всего ${list.length}</button>`:"";
+const capGrid=(k,list,card)=>`<div class="pgrid">${capList(k,list).map(card).join("")}</div>${capMore(k,list)}`;
+/* Поиск: сначала названия, начинающиеся с запроса, затем базовые продукты, затем товары из магазина */
+function rankQ(list,q){const w=normT(q).trim();return list.map((p,i)=>({p,i,s:(normT(p.name).startsWith(w)?0:2)+(p.src==="off"?1:0)})).sort((a,b)=>a.s-b.s||a.i-b.i).map(x=>x.p)}
+/* ---------- Товары из магазина (Open Food Facts, ODbL): products-ru.json, грузится в фоне ---------- */
+let offReady=false;
+function loadOff(){
+  if(location.protocol==="file:") return;
+  fetch("products-ru.json").then(r=>r.ok?r.json():null).then(j=>{
+    if(!j||!Array.isArray(j.rows)) return;
+    const have=new Set(BASE.map(p=>p.id)), names=new Set(BASE.map(p=>normT(p.name)));
+    for(const a of j.rows){ if(have.has(a[0])||names.has(normT(a[1]))||names.has(normT(String(a[1]).split(" · ")[0]))) continue; BASE.push({id:a[0],name:a[1],emoji:a[2],k:a[3],p:a[4],f:a[5],c:a[6],pc:a[7]||0,cat:a[8],bc:a[9],src:"off"}) }
+    offReady=true; renderSoon();
+    try{ if(gwin) renderGwin(); if(sheet&&sheet.mode==="pick") renderPickList(); }catch(e){}
+  }).catch(()=>{});
+}
 /* ---------- Самопроверка расчётов: selfTest() в консоли, ошибки уходят в logs ---------- */
 function selfTest(){
   const fails=[], eq=(name,got,want,tol)=>{const ok=typeof want==="number"?Math.abs(got-want)<=(tol||0):JSON.stringify(got)===JSON.stringify(want);if(!ok)fails.push(name+": "+JSON.stringify(got)+" ≠ "+JSON.stringify(want))};
@@ -5179,6 +5202,7 @@ function selfTest(){
 }catch(e){}})();
 render();
 loadDay();
+loadOff();
 (async()=>{
   try{
     if(!window.claude||!window.claude.use) return;

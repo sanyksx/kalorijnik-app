@@ -5,8 +5,8 @@
    - Фото (/_blob/<id>) отдаются из IndexedDB телефона.
    - Шрифты Google кэшируются после первого открытия.
    ВАЖНО: при каждом выпуске менять VERSION — по нему телефон узнаёт об обновлении. */
-const VERSION = "kalorijnik-2026-10-29c";
-const SHELL = ["./", "index.html", "platform.js", "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-maskable-512.png"];
+const VERSION = "kalorijnik-2026-10-29d";
+const SHELL = ["./", "index.html", "platform.js", "products-ru.json", "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-maskable-512.png"];
 const FONTS = "kalorijnik-fonts";
 
 self.addEventListener("install", e => {
